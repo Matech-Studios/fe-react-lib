@@ -1,0 +1,1 @@
+{"version":3,"file":"userContextConfig.js","sourceRoot":"","sources":["../../../src/context/config/userContextConfig.ts"],"names":[],"mappings":"AAaA,MAAM,CAAC,MAAM,kBAAkB,GAAyB;IACpD,MAAM,EAAE,GAAG,EAAE,CAAC,IAAI;IAClB,MAAM,EAAE,GAAG,EAAE,CAAC,IAAI;IAClB,IAAI,EAAE,IAAI;IACV,aAAa,EAAE,KAAK;CACvB,CAAC"}
