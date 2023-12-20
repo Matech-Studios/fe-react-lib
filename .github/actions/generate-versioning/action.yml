@@ -1,0 +1,61 @@
+name: "Generate Versioning"
+description: "This composite action will generate the package version and push it"
+inputs:
+  version_deploy_token: 
+    description: "token to push to the repo"
+    required: true
+    default: 'World'
+  application_repo: 
+    description: "application repo"
+    required: true
+    default: 'World'
+runs:
+  using: "composite"
+  steps:
+    - name: Generate new package version
+      shell: bash
+      run: |
+        # Get the commit message from the pull request title
+        COMMIT_MESSAGE=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+        echo "Commit Message: $COMMIT_MESSAGE"
+
+        # Extract the current image version from package.json
+        IMAGE_VERSION=$(jq -r .version package.json)
+        echo "Current version: $IMAGE_VERSION"
+
+        # Parse major, minor, and patch version numbers
+        IFS='.' read -r major minor patch <<< "$IMAGE_VERSION"
+
+        # Enable case-insensitive matching for commit message
+        shopt -s nocasematch
+
+        # Determine the new package version based on the commit message
+        if [[ $COMMIT_MESSAGE == feature* ]]; then
+            packageJsonVersion="${major}.$((minor + 1)).$patch"
+        elif [[ $COMMIT_MESSAGE == bugfix* || $COMMIT_MESSAGE == hotfix* ]]; then
+            packageJsonVersion="${major}.$minor.$((patch + 1))"
+        else 
+          echo "Can not determine commit prefix - COMMIT_MESSAGE: $COMMIT_MESSAGE"
+          exit 1
+        fi
+
+        # Disable case-insensitive matching if needed
+        shopt -u nocasematch
+
+        if [ "$packageJsonVersion" != "" ]; then
+          echo "New package.json version: $packageJsonVersion"
+          jq --arg new_version "$packageJsonVersion" '.version = $new_version' package.json > tmpfile && mv tmpfile package.json
+        fi
+
+    - name: Commit changes to package.json
+      shell: bash
+      env:
+        PIPELINE_DEPLOY_TOKEN: ${{inputs.version_deploy_token}}
+        APPLICATION_REPO: ${{inputs.application_repo}}
+      run: |
+        git config --global advice.detachedHead false
+        git config --global user.email "devops@matechstudios.com"
+        git config --global user.name "matechbot"
+        git add *
+        git commit -m "update package version $packageJsonVersion"
+        git push https://matechbot:$PIPELINE_DEPLOY_TOKEN@github.com/Matech-Studios/$APPLICATION_REPO.git HEAD:develop
