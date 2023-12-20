@@ -58,4 +58,4 @@ runs:
         git config --global user.name "matechbot"
         git add *
         git commit -m "update package version $packageJsonVersion"
-        git push https://matechbot:$PIPELINE_DEPLOY_TOKEN@github.com/Matech-Studios/$APPLICATION_REPO.git HEAD:develop
+        git push https://matechbot:$PIPELINE_DEPLOY_TOKEN@github.com/Matech-Studios/$APPLICATION_REPO.git HEAD:main
