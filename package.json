@@ -1,6 +1,6 @@
 {
   "name": "@matech/fe-react-lib",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Matech's common functionalities for FE TypeScript projects",
   "main": "dist/index.js",
   "engines": {
