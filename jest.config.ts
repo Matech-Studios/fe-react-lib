@@ -19,6 +19,7 @@ const config: Config = {
         '^.+\\.(css|less|sass)$': 'babel-jest',
         '\\.svg$': '<rootDir>/svg-name-mapper.js'
     },
+    modulePathIgnorePatterns: ['dist'],
     modulePaths: ['<rootDir>'],
     preset: 'ts-jest',
     rootDir: '.',
