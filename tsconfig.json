@@ -23,7 +23,7 @@
         "strict": true,
         "sourceMap": true,
         "target": "ESNext",
-        "outDir": "dist",
+        "outDir": "lib",
         "paths": {
             "src/*": [
                 "src/*"
