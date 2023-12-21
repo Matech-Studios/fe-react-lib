@@ -1,6 +1,6 @@
 {
-  "name": "@matech/fe-react-lib",
-  "version": "1.0.1",
+  "name": "@Matech-Studios/fe-react-lib",
+  "version": "1.0.0",
   "description": "Matech's common functionalities for FE TypeScript projects",
   "main": "lib/index.js",
   "engines": {
@@ -18,6 +18,9 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/Matech-Studios/fe-react-lib.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   },
   "keywords": [
     "matech",
