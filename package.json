@@ -1,5 +1,5 @@
 {
-  "name": "@Matech-Studios/fe-react-lib",
+  "name": "@matech-studios/fe-react-lib",
   "version": "1.0.1",
   "description": "Matech's common functionalities for FE TypeScript projects",
   "main": "lib/index.js",

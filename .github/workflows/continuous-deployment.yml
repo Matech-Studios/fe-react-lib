@@ -26,6 +26,14 @@ jobs:
         with:
           version_deploy_token: ${{ secrets.VERSION_DEPLOY_TOKEN }}
           application_repo: fe-react-lib
+    
+      - name: Set up package version
+        id: image_version
+        run: |
+            echo "IMAGE_VERSION=v$(jq -r .version package.json)" >> $GITHUB_ENV
+  
+    outputs:
+        package_version: ${{ env.IMAGE_VERSION }}
 
   publish_to_npm:
     name: Publish package to NPM
@@ -47,6 +55,10 @@ jobs:
           node-version: '18.x'
           registry-url: 'https://npm.pkg.github.com'
       
+      - run: npm version ${PACKAGE_VERSION}
+        env:
+          PACKAGE_VERSION: ${{ needs.build.outputs.package_version }}
+    
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
