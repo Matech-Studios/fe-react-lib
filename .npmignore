@@ -1,9 +1,0 @@
-.github
-config
-coverage
-src
-node_modules
-.gitignore
-jest.config.ts
-tsconfig.json
-yarn.lock
