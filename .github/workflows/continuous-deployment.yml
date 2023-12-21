@@ -55,7 +55,8 @@ jobs:
           node-version: '18.x'
           registry-url: 'https://npm.pkg.github.com'
       
-      - run: npm version ${PACKAGE_VERSION}
+      - name: Update package version
+        run: npm version ${PACKAGE_VERSION} --no-git-tag-version
         env:
           PACKAGE_VERSION: ${{ needs.build.outputs.package_version }}
     
