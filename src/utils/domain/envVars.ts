@@ -1,9 +1,7 @@
-const EnvVars = {
+export const EnvVars = {
     getVars: () => {
-        console.log(`process.env: ${process.env}`);
-
         try {
-            if (process.env) {
+            if (process?.env) {
                 return {
                     FIREBASE_API_KEY: process.env.FIREBASE_API_KEY,
                     FIREBASE_AUTH_DOMAIN: process.env.FIREBASE_AUTH_DOMAIN,
