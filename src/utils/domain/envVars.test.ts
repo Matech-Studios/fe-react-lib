@@ -1,6 +1,23 @@
 import { EnvVars } from 'src/utils/domain';
 
 describe('envVars', () => {
+
+    beforeAll(() => {
+        console.log('All tests started')
+    });
+
+    beforeEach(() => {
+        console.log('Test started')
+    });
+
+    afterEach(() => {
+        console.log('Test ended')
+    });
+
+    afterAll(() => {
+        console.log('All tests started');
+        setTimeout(() => process.exit(), 1000)
+    });
     
     it('should return process.env variables when available', () => {
         process.env.FIREBASE_API_KEY = 'firebase-api-key';
