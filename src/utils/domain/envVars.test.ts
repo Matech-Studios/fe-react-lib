@@ -8,10 +8,10 @@ describe('envVars', () => {
 
     /// global.window.__RUNTIME_CONFIG__ is set in jest.testsSetup.ts
     it('should return window.__RUNTIME_CONFIG__ variables when process.env is not available', () => {
-        // global.process = undefined as any;
-        // expect(EnvVars.getVars().FIREBASE_API_KEY).toBe(
-        //     global.window.__RUNTIME_CONFIG__.FIREBASE_API_KEY
-        // );
+        global.process.env = undefined as any;
+        expect(EnvVars.getVars().FIREBASE_API_KEY).toBe(
+            global.window.__RUNTIME_CONFIG__.FIREBASE_API_KEY
+        );
         expect(true).toBe(true);
     });
 });
