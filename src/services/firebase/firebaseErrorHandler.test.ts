@@ -4,7 +4,22 @@ import { firebaseErrorHandler } from 'src/services/firebase/firebaseErrorHandler
 jest.mock('src/constants');
 
 describe('firebaseErrorHandler', () => {
+    beforeAll(() => {
+        console.log('firebaseErrorHandler: All tests started');
+    });
+
+    afterEach(() => {
+        console.log('firebaseErrorHandler: Test ended');
+    });
+
+    afterAll(() => {
+        console.log('firebaseErrorHandler: All tests started');
+        setTimeout(() => process.exit(), 1000);
+    });
+
     beforeEach(() => {
+        console.log('firebaseErrorHandler: Test started');
+
         firebaseErrors.userNotFound = 'User not found';
         firebaseErrors.wrongCredentials = 'Invalid email or password';
         firebaseErrors.emailAlreadyInUse = 'Email already in use';
