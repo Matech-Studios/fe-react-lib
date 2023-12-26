@@ -31,7 +31,8 @@ const config: Config = {
     setupFiles: ['<rootDir>/config/jest.envSetup.ts'],
     setupFilesAfterEnv: ['<rootDir>/config/jest.testsSetup.ts'],
     moduleDirectories: ['node_modules', '<rootDir>'],
-    maxWorkers: '50%'
+    maxWorkers: '50%',
+    watch: false
 };
 
 export default config;
