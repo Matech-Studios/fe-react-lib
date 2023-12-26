@@ -14,7 +14,7 @@ describe('envVars', () => {
     });
 
     afterAll(() => {
-        console.log('envVars: All tests started');
+        console.log('envVars: All tests ended');
         setTimeout(() => process.exit(), 1000);
     });
 

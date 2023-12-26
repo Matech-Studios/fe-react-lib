@@ -13,7 +13,7 @@ describe('firebaseErrorHandler', () => {
     });
 
     afterAll(() => {
-        console.log('firebaseErrorHandler: All tests started');
+        console.log('firebaseErrorHandler: All tests ended');
         setTimeout(() => process.exit(), 1000);
     });
 
