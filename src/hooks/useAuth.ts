@@ -2,7 +2,8 @@ import {
     applyActionCode,
     confirmPasswordReset,
     sendPasswordResetEmail,
-    signInWithEmailAndPassword
+    signInWithEmailAndPassword,
+    ActionCodeSettings
 } from 'firebase/auth';
 import { useUser } from '../hooks/useUser';
 import { auth } from '../services';
@@ -14,8 +15,8 @@ export const useAuth = () => {
         return signInWithEmailAndPassword(auth, email, password);
     };
 
-    const passwordResetEmail = async (email: string) => {
-        return sendPasswordResetEmail(auth, email);
+    const passwordResetEmail = async (email: string, settings?: ActionCodeSettings) => {
+        return sendPasswordResetEmail(auth, email, settings);
     };
 
     const confirmResetPassword = async ({
