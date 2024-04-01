@@ -25,3 +25,5 @@ const app = initializeApp(firebaseConfig);
 
 // Export the authentication service
 export const auth = getAuth(app);
+
+export { signInWithPopup } from 'firebase/auth';
