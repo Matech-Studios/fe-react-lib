@@ -1,5 +1,5 @@
-import { firebaseErrors } from 'src/constants';
-import { firebaseErrorHandler } from 'src/services/firebase/firebaseErrorHandler';
+import { firebaseErrors } from '../../constants';
+import { firebaseErrorHandler } from '../../services/firebase/firebaseErrorHandler';
 
 jest.mock('src/constants');
 

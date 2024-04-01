@@ -1,4 +1,4 @@
-import { EnvVars } from 'src/utils/domain';
+import { EnvVars } from '../../utils/domain';
 
 describe('envVars', () => {
     it('should return process.env variables when available', () => {
