@@ -1,10 +1,10 @@
 {
   "name": "@matech-studios/fe-react-lib",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Matech's common functionalities for FE TypeScript projects",
   "main": "lib/index.js",
   "engines": {
-    "node": "^18"
+    "node": "^20"
   },
   "type": "module",
   "types": "lib/index.d.ts",
@@ -32,7 +32,6 @@
   "author": "Emanuel Ceballos",
   "license": "ISC",
   "dependencies": {
-    "18": "^0.0.0",
     "axios": "^1.6.2",
     "firebase": "^10.7.1",
     "react": "^18.2.0"
