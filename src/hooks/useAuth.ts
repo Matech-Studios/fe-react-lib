@@ -28,7 +28,7 @@ export const useAuth = () => {
     }) => {
         logOut();
         if (!oobCode && !newPassword) return;
-        confirmPasswordReset(auth, oobCode, newPassword);
+        return confirmPasswordReset(auth, oobCode, newPassword);
     };
     const applyFirebaseActionCode = async (oobCode: string) => {
         if (!oobCode) return;
