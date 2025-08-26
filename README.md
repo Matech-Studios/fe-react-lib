@@ -18,7 +18,7 @@ GitHub Packages requires authentication even for public packages. Configure your
 @matech-studios:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_TOKEN}  # provided via CI/your shell
 ```
- 
+
 - Create a GitHub Personal Access Token with `read:packages` (classic) and set it as `GITHUB_PACKAGES_TOKEN` in your environment or CI.
 - Then install as usual:
 
