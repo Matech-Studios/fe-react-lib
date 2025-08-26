@@ -7,13 +7,16 @@ Matech's common functionalities for FE TypeScript projects
 - npm: `npm install @matech-studios/fe-react-lib`
 - yarn: `yarn add @matech-studios/fe-react-lib`
 
+Note: This package is published to GitHub Packages. You must configure auth first (see “Install from GitHub Packages” below).
+
+
 ## Install from GitHub Packages
 
-GitHub Packages requires authentication even for public packages. Configure your project-level `.npmrc` (recommended):
+GitHub Packages requires authentication even for public packages. Configure your project-level `.npmrc` (recommended). Do not commit a real token:
 
 ```ini
 @matech-studios:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_TOKEN}
+//npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_TOKEN}  # provided via CI/your shell
 ```
 
 - Create a GitHub Personal Access Token with `read:packages` (classic) and set it as `GITHUB_PACKAGES_TOKEN` in your environment or CI.
@@ -41,6 +44,8 @@ yarn add @matech-studios/fe-react-lib
     FIREBASE_MEASUREMENT_ID: '...your measurement id...'
   };
   // Ensure this runs before your React app mounts
+  // Note: Firebase API keys are not secrets. Restrict usage in GCP (HTTP referrers, package names, etc.).
+
 </script>
 ```
 

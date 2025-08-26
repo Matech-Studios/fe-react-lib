@@ -1,4 +1,4 @@
-name: DWP UI Backoffice - CI
+name: fe-react-lib - CI
 
 on:
   pull_request:
