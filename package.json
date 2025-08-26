@@ -20,7 +20,8 @@
     "url": "https://github.com/Matech-Studios/fe-react-lib.git"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
   },
   "keywords": [
     "matech",

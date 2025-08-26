@@ -1,4 +1,4 @@
-name: DWP UI Backoffice - Continuous Deployment
+name: fe-react-lib - Continuous Deployment
 on:
   pull_request:
     branches:
@@ -75,4 +75,4 @@ jobs:
       - name: Publish package
         run: npm publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+          TOKEN: ${{secrets.GITHUB_TOKEN}}
