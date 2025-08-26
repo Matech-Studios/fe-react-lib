@@ -1,76 +1,83 @@
 name: fe-react-lib - Continuous Deployment
+
 on:
   pull_request:
-    branches:
-      - main
-    types:
-      - closed
+    branches: [ main ]
+    types: [ closed ]
+
+# Ensure the default GITHUB_TOKEN can write to the repo (needed to push)
+permissions:
+  contents: write
+  packages: write
 
 jobs:
   updates_version:
     name: Updates package version
     runs-on: ubuntu-latest
 
-    permissions:
-        contents: write
-        packages: write
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          # On PR closed we want the base branch (main), not the PR head
+          ref: main
+          # Use the auto-injected GITHUB_TOKEN (will bypass once repo setting is enabled)
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Modify version
         uses: ./.github/actions/generate-versioning
         with:
-          version_deploy_token: ${{ secrets.VERSION_DEPLOY_TOKEN }}
+          # Use GITHUB_TOKEN so the action can commit & push back to main
+          version_deploy_token: ${{ secrets.GITHUB_TOKEN }}
           application_repo: fe-react-lib
-    
+
       - name: Set up package version
         id: image_version
         run: |
-            echo "IMAGE_VERSION=v$(jq -r .version package.json)" >> $GITHUB_ENV
-  
+          echo "IMAGE_VERSION=v$(jq -r .version package.json)" >> "$GITHUB_ENV"
+
     outputs:
-        package_version: ${{ env.IMAGE_VERSION }}
+      package_version: ${{ env.IMAGE_VERSION }}
 
   publish_to_npm:
     name: Publish package to NPM
     runs-on: ubuntu-latest
-    
-    permissions:
-        contents: read
-        packages: write
-    
     needs: updates_version
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
       - name: Use Node.js 20.x
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: "yarn"
+          cache: yarn
 
       - name: Install Dependencies
         run: yarn
 
       - name: Build
         run: yarn run build
-        
-      # Setup .npmrc file to publish to npm
+
+      # Configure GitHub Packages registry
       - name: Create publish configuration
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
-          registry-url: 'https://npm.pkg.github.com'
-      
+          node-version: 20.x
+          registry-url: https://npm.pkg.github.com
+
       - name: Update package version
         run: npm version ${PACKAGE_VERSION} --no-git-tag-version
         env:
           PACKAGE_VERSION: ${{ needs.updates_version.outputs.package_version }}
-    
+
       - name: Publish package
         run: npm publish
         env:
-          TOKEN: ${{secrets.GITHUB_TOKEN}}
+          # npm expects NODE_AUTH_TOKEN for auth to the registry
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
