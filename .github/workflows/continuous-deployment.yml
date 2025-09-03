@@ -37,8 +37,8 @@ jobs:
     outputs:
       package_version: ${{ env.IMAGE_VERSION }}
 
-  publish_to_npm:
-    name: Publish package to NPM
+  publish_gpr:
+    name: Publish package to GitHub Packages
     runs-on: ubuntu-latest
     needs: updates_version
 
@@ -49,31 +49,27 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Use Node.js 20.x
+      - name: Use Node.js 20 and configure registry
         uses: actions/setup-node@v4
         with:
-          node-version: 20.x
-          cache: yarn
+          node-version: 20
+          registry-url: https://npm.pkg.github.com
+          # Scope must match your GitHub org or user that owns the repo
+          scope: '@matech-studios'
 
-      - name: Install Dependencies
-        run: yarn
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
 
       - name: Build
-        run: yarn run build
-
-      # Configure GitHub Packages registry
-      - name: Create publish configuration
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-          registry-url: https://npm.pkg.github.com
+        run: yarn build
 
       - name: Update package version
-        run: npm version ${PACKAGE_VERSION} --no-git-tag-version
+        run: npm version "${PACKAGE_VERSION}" --no-git-tag-version
         env:
           PACKAGE_VERSION: ${{ needs.updates_version.outputs.package_version }}
 
-      - name: Publish package
+      - name: Publish to GitHub Packages
         run: npm publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+          # GITHUB_TOKEN is enough for same-org publishing when permissions.packages=write
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
