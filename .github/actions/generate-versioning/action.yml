@@ -1,20 +1,21 @@
 name: "Generate Versioning"
-description: "This composite action will generate the package version and push it"
+description: "Generate the package version based on the PR title"
 inputs:
+  application_repo:
+    description: "application repo (unused here but kept for compatibility)"
+    required: false
   version_deploy_token: 
     description: "token to push to the repo"
     required: true
-    default: 'World'
-  application_repo: 
-    description: "application repo"
-    required: true
-    default: 'World'
+    default: 'secrets.VERSION_DEPLOY_TOKEN'
 runs:
   using: "composite"
   steps:
-    - name: Generate new package version
+    - name: Compute new version and write package.json
+      id: compute
       shell: bash
       run: |
+        set -euo pipefail
         # Get the commit message from the pull request title
         COMMIT_MESSAGE=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
         echo "Commit Message: $COMMIT_MESSAGE"
@@ -31,10 +32,10 @@ runs:
 
         # Determine the new package version based on the commit message
         if [[ $COMMIT_MESSAGE == feature* ]]; then
-            packageJsonVersion="${major}.$((minor + 1)).$patch"
+          packageJsonVersion="${major}.$((minor + 1)).$patch"
         elif [[ $COMMIT_MESSAGE == bugfix* || $COMMIT_MESSAGE == hotfix* ]]; then
-            packageJsonVersion="${major}.$minor.$((patch + 1))"
-        else 
+          packageJsonVersion="${major}.$minor.$((patch + 1))"
+        else
           echo "Can not determine commit prefix - COMMIT_MESSAGE: $COMMIT_MESSAGE"
           exit 1
         fi
@@ -46,16 +47,25 @@ runs:
           echo "New package.json version: $packageJsonVersion"
           jq --arg new_version "$packageJsonVersion" '.version = $new_version' package.json > tmpfile && mv tmpfile package.json
         fi
+        
+        echo "new_version=v${packageJsonVersion}" >> "$GITHUB_OUTPUT"
 
     - name: Commit changes to package.json
       shell: bash
-      env:
-        PIPELINE_DEPLOY_TOKEN: ${{inputs.version_deploy_token}}
-        APPLICATION_REPO: ${{inputs.application_repo}}
       run: |
-        git config --global advice.detachedHead false
-        git config --global user.email "devops@matechstudios.com"
-        git config --global user.name "matechbot"
-        git add *
-        git commit -m "update package version $packageJsonVersion"
-        git push https://matechbot:$PIPELINE_DEPLOY_TOKEN@github.com/Matech-Studios/$APPLICATION_REPO.git HEAD:main
+        set -euo pipefail
+        git config user.email "devops@matechstudios.com"
+        git config user.name  "matechbot"
+        git add -A
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "chore: bump version to v${{ steps.compute.outputs.new_version#v }}"
+        fi
+
+        # This uses the token from actions/checkout (persist-credentials: true)
+        # Requires bypass on your ruleset/branch protection to succeed
+        git push https://matechbot:$VERSION_DEPLOY_TOKEN@github.com/Matech-Studios/$APPLICATION_REPO.git HEAD:main
+outputs:
+  new_version:
+    value: ${{ steps.compute.outputs.new_version }}
