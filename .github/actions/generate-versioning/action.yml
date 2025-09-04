@@ -89,5 +89,5 @@ runs:
           git commit -m "chore: bump version to v${NEW_VERSION}"
           # Push using PAT
           git remote set-url origin "https://matechbot:${VERSION_DEPLOY_TOKEN}@github.com/Matech-Studios/${APPLICATION_REPO}.git"
-          git origin HEAD:main
+          git push origin HEAD:main
         fi

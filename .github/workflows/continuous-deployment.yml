@@ -16,7 +16,7 @@ jobs:
   updates_version:
     name: Update package version on main
     permissions:
-      contents: write
+      contents: read
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
