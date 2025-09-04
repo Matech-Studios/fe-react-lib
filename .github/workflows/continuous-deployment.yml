@@ -11,10 +11,6 @@ concurrency:
   group: fe-react-lib-cd-${{ github.ref }}
   cancel-in-progress: false
 
-concurrency:
-  group: fe-react-lib-cd-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
   updates_version:
     name: Update package version on main
