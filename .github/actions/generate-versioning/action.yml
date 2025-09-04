@@ -1,13 +1,19 @@
 name: "Generate Versioning"
-description: "Generate the package version based on the PR title"
+description: "Generate the package version based on the PR title or branch name"
+
 inputs:
   application_repo:
-    description: "application repo (unused here but kept for compatibility)"
+    description: "Target repo name (owner/repo not needed). If empty, will infer from GITHUB_REPOSITORY."
     required: false
-  version_deploy_token: 
-    description: "token to push to the repo"
+  version_deploy_token:
+    description: "Personal Access Token with repo permissions to push the commit"
     required: true
-    default: 'secrets.VERSION_DEPLOY_TOKEN'
+
+outputs:
+  new_version:
+    description: "The computed semantic version (no leading 'v')"
+    value: ${{ steps.compute.outputs.new_version }}
+
 runs:
   using: "composite"
   steps:
@@ -16,56 +22,71 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        # Get the commit message from the pull request title
-        COMMIT_MESSAGE=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
-        echo "Commit Message: $COMMIT_MESSAGE"
 
-        # Extract the current image version from package.json
-        IMAGE_VERSION=$(jq -r .version package.json)
-        echo "Current version: $IMAGE_VERSION"
+        # Prefer PR title when available; otherwise use branch ref
+        PR_TITLE=""
+        if [[ -n "${GITHUB_EVENT_PATH:-}" && -f "$GITHUB_EVENT_PATH" ]]; then
+          PR_TITLE="$(jq -r '.pull_request.title // empty' "$GITHUB_EVENT_PATH" 2>/dev/null || true)"
+        fi
+        SUBJECT="${PR_TITLE:-${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}}"
+        echo "Subject for versioning: $SUBJECT"
 
-        # Parse major, minor, and patch version numbers
-        IFS='.' read -r major minor patch <<< "$IMAGE_VERSION"
+        # Extract current version from package.json
+        CURRENT_VERSION="$(jq -r '.version' package.json)"
+        echo "Current version (package.json): $CURRENT_VERSION"
 
-        # Enable case-insensitive matching for commit message
-        shopt -s nocasematch
-
-        # Determine the new package version based on the commit message
-        if [[ $COMMIT_MESSAGE == feature* ]]; then
-          packageJsonVersion="${major}.$((minor + 1)).$patch"
-        elif [[ $COMMIT_MESSAGE == bugfix* || $COMMIT_MESSAGE == hotfix* ]]; then
-          packageJsonVersion="${major}.$minor.$((patch + 1))"
-        else
-          echo "Can not determine commit prefix - COMMIT_MESSAGE: $COMMIT_MESSAGE"
+        # Strict SemVer (major.minor.patch)
+        if [[ ! "$CURRENT_VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+          echo "package.json version must be strict SemVer (e.g., 1.2.3). Found: $CURRENT_VERSION"
           exit 1
         fi
+        major="${BASH_REMATCH[1]}"; minor="${BASH_REMATCH[2]}"; patch="${BASH_REMATCH[3]}"
 
-        # Disable case-insensitive matching if needed
+        shopt -s nocasematch
+        # Decide bump by prefix in subject
+        if [[ "$SUBJECT" == feature* || "$SUBJECT" == feat* ]]; then
+          NEW_VERSION="${major}.$((minor + 1)).${patch}"
+        elif [[ "$SUBJECT" == bugfix* || "$SUBJECT" == hotfix* || "$SUBJECT" == fix* ]]; then
+          NEW_VERSION="${major}.${minor}.$((patch + 1))"
+        else
+          echo "Cannot determine bump (need prefix feature/feat/bugfix/fix/hotfix). Subject: $SUBJECT"
+          exit 1
+        fi
         shopt -u nocasematch
 
-        if [ "$packageJsonVersion" != "" ]; then
-          echo "New package.json version: $packageJsonVersion"
-          jq --arg new_version "$packageJsonVersion" '.version = $new_version' package.json > tmpfile && mv tmpfile package.json
-        fi
-        
-        echo "new_version=v${packageJsonVersion}" >> "$GITHUB_OUTPUT"
+        echo "New version to write: $NEW_VERSION"
+
+        # Safely write package.json
+        tmpfile="$(mktemp)"
+        jq --arg v "$NEW_VERSION" '.version = $v' package.json > "$tmpfile"
+        mv "$tmpfile" package.json
+
+        # Expose output WITHOUT leading 'v'
+        echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
 
     - name: Commit changes to package.json
+      id: commit
       shell: bash
+      env:
+        VERSION_DEPLOY_TOKEN: ${{ inputs.version_deploy_token }}
+        APPLICATION_REPO: ${{ inputs.application_repo }}
+        NEW_VERSION: ${{ steps.compute.outputs.new_version }}
       run: |
         set -euo pipefail
+
+        # Derive repo name if not provided (owner/repo -> take repo)
+        if [[ -z "${APPLICATION_REPO:-}" ]]; then
+          APPLICATION_REPO="${GITHUB_REPOSITORY#*/}"
+        fi
+
         git config user.email "devops@matechstudios.com"
         git config user.name  "matechbot"
+
         git add -A
         if git diff --cached --quiet; then
           echo "No changes to commit"
         else
-          git commit -m "chore: bump version to v${{ steps.compute.outputs.new_version#v }}"
+          git commit -m "chore: bump version to v${NEW_VERSION}"
+          # Push using PAT
+          git push "https://matechbot:${VERSION_DEPLOY_TOKEN}@github.com/Matech-Studios/${APPLICATION_REPO}.git" HEAD:main
         fi
-
-        # This uses the token from actions/checkout (persist-credentials: true)
-        # Requires bypass on your ruleset/branch protection to succeed
-        git push https://matechbot:$VERSION_DEPLOY_TOKEN@github.com/Matech-Studios/$APPLICATION_REPO.git HEAD:main
-outputs:
-  new_version:
-    value: ${{ steps.compute.outputs.new_version }}

@@ -9,69 +9,73 @@ permissions:
   contents: write
   packages: write
 
+concurrency:
+  group: fe-react-lib-cd-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   updates_version:
-    name: Updates package version
+    name: Update package version on main
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
+    outputs:
+      package_version: ${{ steps.capture.outputs.version }}
+
     steps:
-      - name: Checkout main
+      - name: Checkout main (clean, no persisted creds)
         uses: actions/checkout@v4
         with:
-          # On PR closed we want the base branch (main), not the PR head
           ref: main
-          # Use the auto-injected GITHUB_TOKEN (will bypass once repo setting is enabled)
-          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Modify version
+      - name: Generate & commit new version
+        id: gen
         uses: ./.github/actions/generate-versioning
         with:
           version_deploy_token: ${{ secrets.VERSION_DEPLOY_TOKEN }}
           application_repo: fe-react-lib
 
-      - name: Set up package version
-        id: image_version
-        run: |
-          echo "IMAGE_VERSION=v$(jq -r .version package.json)" >> "$GITHUB_ENV"
-
-    outputs:
-      package_version: ${{ env.IMAGE_VERSION }}
+      # Expose the computed version as a job output (no leading 'v')
+      - name: Capture version output
+        id: capture
+        run: echo "version=${{ steps.gen.outputs.new_version }}" >> "$GITHUB_OUTPUT"
 
   publish_gpr:
-    name: Publish package to GitHub Packages
-    runs-on: ubuntu-latest
+    name: Publish to GitHub Packages
+    if: github.event.pull_request.merged == true
     needs: updates_version
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout main
+      - name: Checkout main (after bump was pushed)
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
 
-      - name: Use Node.js 20 and configure registry
+      - name: Use Node.js 20 and configure GitHub Packages
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20.x
           registry-url: https://npm.pkg.github.com
-          # Scope must match your GitHub org or user that owns the repo
-          # cache: yarn
           scope: '@matech-studios'
+          cache: 'yarn'
 
-      - name: Install dependencies
+      - name: Install deps
         run: yarn install --frozen-lockfile
 
       - name: Build
         run: yarn build
 
-      - name: Update package version
+      # Ensure package.json matches the computed version (no 'v')
+      - name: Update package.json to computed version (no tag)
         run: npm version "${PACKAGE_VERSION}" --no-git-tag-version
         env:
           PACKAGE_VERSION: ${{ needs.updates_version.outputs.package_version }}
 
       - name: Publish to GitHub Packages
-        run: npm publish
         env:
-          # GITHUB_TOKEN is enough for same-org publishing when permissions.packages=write
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm publish
