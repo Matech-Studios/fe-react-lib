@@ -5,9 +5,11 @@ on:
     branches: [ main ]
     types: [ closed ]
 
-permissions:
-  contents: write
-  packages: write
+permissions: {}
+
+concurrency:
+  group: fe-react-lib-cd-${{ github.ref }}
+  cancel-in-progress: false
 
 concurrency:
   group: fe-react-lib-cd-${{ github.ref }}
@@ -16,6 +18,8 @@ concurrency:
 jobs:
   updates_version:
     name: Update package version on main
+    permissions:
+      contents: read
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
@@ -44,6 +48,9 @@ jobs:
 
   publish_gpr:
     name: Publish to GitHub Packages
+    permissions:
+      contents: read
+      packages: write
     if: github.event.pull_request.merged == true
     needs: updates_version
     runs-on: ubuntu-latest
