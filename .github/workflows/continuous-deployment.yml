@@ -20,7 +20,8 @@ jobs:
         with:
           # On PR closed we want the base branch (main), not the PR head
           ref: main
-          token: ${{ secrets.VERSION_DEPLOY_TOKEN }}
+          # Use the auto-injected GITHUB_TOKEN (will bypass once repo setting is enabled)
+          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
       - name: Modify version
@@ -55,6 +56,7 @@ jobs:
           node-version: 20
           registry-url: https://npm.pkg.github.com
           # Scope must match your GitHub org or user that owns the repo
+          # cache: yarn
           scope: '@matech-studios'
 
       - name: Install dependencies
