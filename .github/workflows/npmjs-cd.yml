@@ -10,6 +10,8 @@ on:
 permissions:
   contents: read
   packages: read
+  # For npm provenance (optional):
+  id-token: write
 
 jobs:
   publish_to_npmjs:
@@ -17,33 +19,62 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
+      - uses: actions/checkout@v4
 
-      - name: Set up package version
-        id: image_version
-        run: |
-          echo "IMAGE_VERSION=v$(jq -r .version package.json)" >> $GITHUB_ENV
-        
-      - name: Use Node.js 20.x
-        uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: "yarn"
+          cache: yarn
+          # Helps npm pick the right registry/auth context
+          registry-url: https://registry.npmjs.org
+        
+      # Optional but helpful if you use Yarn 3/4 via Corepack
+      - name: Enable Corepack (Yarn)
+        run: corepack enable
 
-      - name: Install Dependencies
-        run: yarn
-
-      - name: Build
-        run: yarn run build
+      - name: Read package info
+        id: pkg
+        shell: bash
+        run: |
+          set -euo pipefail
+          NAME="$(node -p "require('./package.json').name || ''")"
+          VERSION="$(node -p "require('./package.json').version || ''")"
+          # Fail fast if either value is empty
+          [ -n "$NAME" ] && [ -n "$VERSION" ]
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
       
-      - name: Verify package
-        run: yarn pack --dry-run
+      - name: Build
+        run: yarn build
 
-      - name: Publish to npmjs (public)
-        run: npm publish --access public --registry https://registry.npmjs.org/
+      - name: Verify package contents
+        run: yarn pack --dry-run
+        
+      - name: Check if version already exists on npm
+        id: version_check
+        run: |
+          set -euo pipefail
+          PUBLISHED=$(npm view "${{ steps.pkg.outputs.name }}@${{ steps.pkg.outputs.version }}" version || true)
+          if [ "$PUBLISHED" = "${{ steps.pkg.outputs.version }}" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish to npmjs (public) with provenance
+        if: steps.version_check.outputs.exists == 'false'
         env:
+          # Use an npm Automation token for orgs/users with 2FA enabled
           NODE_AUTH_TOKEN: ${{ secrets.NPMJS_TOKEN }}
+        run: |
+          # If your package is scoped and meant to be public,
+          # you can keep --access public (or set publishConfig.access in package.json)
+          npm publish --provenance --access public
+
+      - name: Skip publish (version already exists)
+        if: steps.version_check.outputs.exists == 'true'
+        run: echo "Version ${{ steps.pkg.outputs.version }} already exists on npm. Skipping publish."
