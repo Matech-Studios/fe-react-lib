@@ -84,11 +84,25 @@ jobs:
 
       # Ensure package.json matches the computed version (no 'v')
       - name: Update package.json to computed version (no tag)
-        run: npm version "${PACKAGE_VERSION}" --no-git-tag-version
+        run: |
+          CURRENT="$(jq -r .version package.json)"
+          if [ "$CURRENT" = "${PACKAGE_VERSION}" ]; then
+            echo "package.json already at ${PACKAGE_VERSION}, skipping"
+          else
+            npm version "${PACKAGE_VERSION}" --no-git-tag-version
+          fi
         env:
           PACKAGE_VERSION: ${{ needs.updates_version.outputs.package_version }}
 
       - name: Publish to GitHub Packages
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm publish
+          PACKAGE_VERSION: ${{ needs.updates_version.outputs.package_version }}
+        run: |
+          set -euo pipefail
+          if npm view "@matech-studios/fe-react-lib@${PACKAGE_VERSION}" version --registry https://npm.pkg.github.com > /dev/null 2>&1; then
+            echo "Version ${PACKAGE_VERSION} already published to GitHub Packages; skipping."
+            exit 0
+          fi
+          npm publish
+
