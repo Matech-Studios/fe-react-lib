@@ -92,8 +92,18 @@ runs:
           echo "No changes to commit"
         else
           git commit -m "chore: bump version to v${NEW_VERSION}"
+          # debug
+          git remote -v
           # Push using PAT
           git remote set-url origin "https://x-access-token:${VERSION_DEPLOY_TOKEN}@github.com/Matech-Studios/${APPLICATION_REPO}.git"
+          # debug
+          git remote -v
+          git ls-remote target || true
+          export GIT_TRACE_CURL=1 GIT_CURL_VERBOSE=1
           git pull --rebase origin "${{ inputs.target_branch }}" || true
+          # debug
+          git remote -v
+          git ls-remote target || true
+          export GIT_TRACE_CURL=1 GIT_CURL_VERBOSE=1
           git push origin HEAD:"${{ inputs.target_branch }}"
         fi
