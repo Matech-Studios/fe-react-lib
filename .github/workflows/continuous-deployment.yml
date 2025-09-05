@@ -97,4 +97,12 @@ jobs:
       - name: Publish to GitHub Packages
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm publish
+          PACKAGE_VERSION: ${{ needs.updates_version.outputs.package_version }}
+        run: |
+          set -euo pipefail
+          if npm view "@matech-studios/fe-react-lib@${PACKAGE_VERSION}" version --registry https://npm.pkg.github.com > /dev/null 2>&1; then
+            echo "Version ${PACKAGE_VERSION} already published to GitHub Packages; skipping."
+            exit 0
+          fi
+          npm publish
+
