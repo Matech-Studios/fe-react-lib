@@ -95,7 +95,7 @@ runs:
           # debug
           git remote -v
           # Push using PAT
-          git remote set-url origin "https://x-access-token:${VERSION_DEPLOY_TOKEN}@github.com/Matech-Studios/${APPLICATION_REPO}.git"
+          git remote set-url origin "https://matechbot:${VERSION_DEPLOY_TOKEN}@github.com/Matech-Studios/${APPLICATION_REPO}.git"
           # debug
           git remote -v
           git ls-remote target || true
