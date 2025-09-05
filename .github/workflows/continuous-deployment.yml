@@ -36,6 +36,7 @@ jobs:
         with:
           version_deploy_token: ${{ secrets.VERSION_DEPLOY_TOKEN }}
           application_repo: fe-react-lib
+          target_branch: main
 
       # Expose the computed version as a job output (no leading 'v')
       - name: Capture version output

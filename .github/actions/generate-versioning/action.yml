@@ -8,6 +8,10 @@ inputs:
   version_deploy_token:
     description: "Personal Access Token with repo permissions to push the commit"
     required: true
+  target_branch:
+    description: 'Branch to push version bump to'
+    required: false
+    default: 'develop'
 
 outputs:
   new_version:
@@ -79,15 +83,17 @@ runs:
           APPLICATION_REPO="${GITHUB_REPOSITORY#*/}"
         fi
 
-        git config user.email "devops@matechstudios.com"
-        git config user.name  "matechbot"
+        git config --local advice.detachedHead false
+        git config --local user.email "devops@matechstudios.com"
+        git config --local user.name "matechbot"
 
-        git add -A
+        git add package.json
         if git diff --cached --quiet; then
           echo "No changes to commit"
         else
           git commit -m "chore: bump version to v${NEW_VERSION}"
           # Push using PAT
-          git remote set-url origin "https://matechbot:${VERSION_DEPLOY_TOKEN}@github.com/Matech-Studios/${APPLICATION_REPO}.git"
-          git push origin HEAD:main
+          git remote set-url origin "https://x-access-token:${VERSION_DEPLOY_TOKEN}@github.com/Matech-Studios/${APPLICATION_REPO}.git"
+          git pull --rebase origin "${{ inputs.target_branch }}" || true
+          git push origin HEAD:"${{ inputs.target_branch }}"
         fi
