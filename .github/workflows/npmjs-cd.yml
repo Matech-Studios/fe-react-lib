@@ -1,74 +1,80 @@
-name: fe-react-lib - Continuous Deployment
+name: fe-react-lib - npmjs deployment 
 on:
+  workflow_dispatch: {}
 #   pull_request:
 #     branches:
 #       - main
 #     types:
 #       - closed
-  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: read
+  # For npm provenance (optional):
+  id-token: write
 
 jobs:
-  updates_version:
-    name: Updates package version
-    runs-on: ubuntu-latest
-
-    permissions:
-        contents: write
-        packages: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        # with:
-        #   token: ${{ secrets.VERSION_DEPLOY_TOKEN }}
-
-      - name: Modify version
-        uses: ./.github/actions/generate-versioning
-        with:
-          version_deploy_token: ${{ secrets.VERSION_DEPLOY_TOKEN }}
-          application_repo: fe-react-lib
-    
-      - name: Set up package version
-        id: image_version
-        run: |
-            echo "IMAGE_VERSION=v$(jq -r .version package.json)" >> $GITHUB_ENV
-  
-    outputs:
-        package_version: ${{ env.IMAGE_VERSION }}
-
   publish_to_npmjs:
     name: Publish package to npmjs (public)
     runs-on: ubuntu-latest
 
-    permissions:
-        contents: read
-        packages: read
-
-    needs: updates_version
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Use Node.js 20.x
-        uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: "yarn"
+          cache: yarn
+          # Helps npm pick the right registry/auth context
+          registry-url: https://registry.npmjs.org
+        
+      # Optional but helpful if you use Yarn 3/4 via Corepack
+      - name: Enable Corepack (Yarn)
+        run: corepack enable
 
-      - name: Install Dependencies
-        run: yarn
-
+      - name: Read package info
+        id: pkg
+        shell: bash
+        run: |
+          set -euo pipefail
+          NAME="$(node -p "require('./package.json').name || ''")"
+          VERSION="$(node -p "require('./package.json').version || ''")"
+          # Fail fast if either value is empty
+          [ -n "$NAME" ] && [ -n "$VERSION" ]
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+      
       - name: Build
-        run: yarn run build
+        run: yarn build
 
-      # Ensure the package version matches the versioning job
-      - name: Update package version
-        run: npm version ${PACKAGE_VERSION} --no-git-tag-version
-        env:
-          PACKAGE_VERSION: ${{ needs.updates_version.outputs.package_version }}
+      - name: Verify package contents
+        run: yarn pack --dry-run
+        
+      - name: Check if version already exists on npm
+        id: version_check
+        run: |
+          set -euo pipefail
+          PUBLISHED=$(npm view "${{ steps.pkg.outputs.name }}@${{ steps.pkg.outputs.version }}" version || true)
+          if [ "$PUBLISHED" = "${{ steps.pkg.outputs.version }}" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
-      # Publish publicly to npmjs.org, overriding package publishConfig registry
-      - name: Publish to npmjs (public)
-        run: npm publish --access public --registry https://registry.npmjs.org/
+      - name: Publish to npmjs (public) with provenance
+        if: steps.version_check.outputs.exists == 'false'
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # Use an npm Automation token for orgs/users with 2FA enabled
+          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_TOKEN }}
+        run: |
+          # If your package is scoped and meant to be public,
+          # you can keep --access public (or set publishConfig.access in package.json)
+          npm publish --provenance --access public
+
+      - name: Skip publish (version already exists)
+        if: steps.version_check.outputs.exists == 'true'
+        run: echo "Version ${{ steps.pkg.outputs.version }} already exists on npm. Skipping publish."
