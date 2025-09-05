@@ -1,4 +1,4 @@
-name: fe-react-lib - Continuous Deployment
+name: fe-react-lib - versioning & publish
 
 on:
   pull_request:
@@ -23,18 +23,27 @@ jobs:
       package_version: ${{ steps.capture.outputs.version }}
 
     steps:
+      - name: Mint GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.MATECH_APP_ID }}
+          private-key: ${{ secrets.MATECH_APP_PRIVATE_KEY }}
+          # owner and repositories are auto-detected for this repo
+
       - name: Checkout main (clean, no persisted creds)
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Generate & commit new version
         id: gen
         uses: ./.github/actions/generate-versioning
         with:
-          version_deploy_token: ${{ secrets.VERSION_DEPLOY_TOKEN }}
+          version_deploy_token: ${{ steps.app-token.outputs.token }}
           application_repo: fe-react-lib
           target_branch: main
 
