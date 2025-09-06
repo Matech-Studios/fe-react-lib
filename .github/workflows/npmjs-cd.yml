@@ -73,7 +73,7 @@ jobs:
         run: |
           # If your package is scoped and meant to be public,
           # you can keep --access public (or set publishConfig.access in package.json)
-          npm publish --provenance --access public
+          npm publish --access public --registry https://registry.npmjs.org --provenance
 
       - name: Skip publish (version already exists)
         if: steps.version_check.outputs.exists == 'true'
