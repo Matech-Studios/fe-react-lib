@@ -1,16 +1,23 @@
 # fe-react-lib
 
+[![npm version](https://img.shields.io/npm/v/@matech-studios/fe-react-lib)](https://www.npmjs.com/package/@matech-studios/fe-react-lib) [![npm downloads](https://img.shields.io/npm/dm/@matech-studios/fe-react-lib)](https://www.npmjs.com/package/@matech-studios/fe-react-lib)
+
 Matech's common functionalities for FE TypeScript projects
+
+- Direct npm link: https://www.npmjs.com/package/@matech-studios/fe-react-lib
 
 ## Installation
 
 - npm: `npm install @matech-studios/fe-react-lib`
 - yarn: `yarn add @matech-studios/fe-react-lib`
 
-Note: This package is published to GitHub Packages. You must configure auth first (see “Install from GitHub Packages” below).
+## Package Availability
+
+- npmjs (default): Published publicly to npm. The commands above work without extra configuration. Direct: https://www.npmjs.com/package/@matech-studios/fe-react-lib
+- GitHub Packages (mirror): Also published to GitHub Packages. Requires auth if your `.npmrc` routes the `@matech-studios` scope to GitHub (see below). Direct: https://github.com/orgs/Matech-Studios/packages?repo_name=fe-react-lib
 
 
-## Install from GitHub Packages
+## Install from GitHub Packages (optional)
 
 GitHub Packages requires authentication even for public packages. Configure your project-level `.npmrc` (recommended). Do not commit a real token:
 
